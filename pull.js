@@ -18,8 +18,6 @@ const startBlock = 10890000;
 
 console.log("\x1b[33m%s\x1b[0m", "Code is running.....");
 
-let stakers = [];
-
 async function getEvents(topic) {
     let params = {
         address: contractAddress,
@@ -32,14 +30,26 @@ async function getEvents(topic) {
 
 async function init() {
     const events = await getEvents(increaseStake);
+    let stakers = [];
+    finalSet = [];
 
     for (let eventObj of events) {
         const fromAddress = "0x" + eventObj.topics[1].substr(26, 40);
         stakers.push(fromAddress);
     }
 
-    const set = Array.from(new Set(stakers));
-    fs.writeFileSync((__dirname, 'data.json'), set);
+    const knownSet = Array.from(new Set(stakers));
+
+    for (let address of knownSet) {
+        const stakeBalance = await stakeProvider.staked(address);
+
+        if (stakeBalance.gt(0.0)) {
+            finalSet.push(address);
+        }
+    }
+
+    finalSet = Array.from(new Set(finalSet));
+    fs.writeFileSync((__dirname, 'data.json'), finalSet);
 }
 
 init();
